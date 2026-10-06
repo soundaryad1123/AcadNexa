@@ -5,11 +5,9 @@ Seeds multi-tenant PostgreSQL database with:
 - 2 College Admins (1 per tenant)
 - 10 Faculty Members (5 per tenant across departments)
 - 50 Students (25 per tenant across departments & semesters)
-- Hardware Ingestion Nodes (IoT Scanners)
-- Smart ID Profiles (NFC/RFID cards)
 - Courses & Course Enrollments
 - Master Timetables (Theory & Lab sessions)
-- Attendance Logs (IoT Scans & Overrides)
+- Attendance Logs (Portal Session Entries & Faculty Overrides)
 - Assessment Records (Grades & evaluations)
 - Campus/Department Alerts
 """
@@ -25,7 +23,6 @@ from typing import List, Dict
 # Ensure UTF-8 output on Windows consoles
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
-
 
 from sqlalchemy import (
     create_engine, Column, String, Boolean, Integer, Numeric,
@@ -67,30 +64,7 @@ class Tenant(Base):
     updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 
     users = relationship("User", back_populates="tenant", cascade="all, delete-orphan")
-    hardware_nodes = relationship("HardwareNode", back_populates="tenant", cascade="all, delete-orphan")
     courses = relationship("Course", back_populates="tenant", cascade="all, delete-orphan")
-
-
-class HardwareNode(Base):
-    __tablename__ = "hardware_nodes"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
-    node_code = Column(String(64), nullable=False)
-    name = Column(String(128), nullable=False)
-    room_number = Column(String(64), nullable=True)
-    mac_address = Column(String(32), nullable=True)
-    api_key_hash = Column(String(255), nullable=False)
-    status = Column(String(32), nullable=False, default="ACTIVE")
-    last_heartbeat = Column(DateTime(timezone=True), nullable=True)
-    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
-
-    __table_args__ = (
-        UniqueConstraint("tenant_id", "node_code", name="uq_hardware_nodes_tenant_code"),
-        Index("idx_hardware_nodes_tenant", "tenant_id", "status"),
-    )
-
-    tenant = relationship("Tenant", back_populates="hardware_nodes")
 
 
 class User(Base):
@@ -116,29 +90,6 @@ class User(Base):
     )
 
     tenant = relationship("Tenant", back_populates="users")
-    smart_id_profile = relationship("SmartIdProfile", back_populates="user", uselist=False, foreign_keys="SmartIdProfile.user_id")
-
-
-class SmartIdProfile(Base):
-    __tablename__ = "smart_id_profiles"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    card_uid = Column(String(64), nullable=False)
-    card_type = Column(String(32), nullable=False, default="MIFARE_CLASSIC")
-    status = Column(String(32), nullable=False, default="ACTIVE")  # ACTIVE, SUSPENDED, LOST, EXPIRED
-    issued_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
-    assigned_by = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
-    updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
-
-    __table_args__ = (
-        UniqueConstraint("tenant_id", "user_id", name="uq_smart_id_tenant_user"),
-        UniqueConstraint("tenant_id", "card_uid", name="uq_smart_id_tenant_card_uid"),
-        Index("idx_smart_id_lookup", "tenant_id", "card_uid", "status"),
-    )
-
-    user = relationship("User", foreign_keys=[user_id], back_populates="smart_id_profile")
 
 
 class Course(Base):
@@ -211,9 +162,8 @@ class AttendanceLog(Base):
     tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     timetable_id = Column(UUID(as_uuid=True), ForeignKey("timetables.id", ondelete="SET NULL"), nullable=True)
-    hardware_node_id = Column(UUID(as_uuid=True), ForeignKey("hardware_nodes.id", ondelete="SET NULL"), nullable=True)
     timestamp = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
-    source = Column(String(32), nullable=False)  # IOT_SCAN, MANUAL_OVERRIDE
+    source = Column(String(32), nullable=False)  # PORTAL_ENTRY, MANUAL_OVERRIDE
     status = Column(String(32), nullable=False, default="PRESENT")  # PRESENT, ABSENT, LATE, EXCUSED
     verified_by = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     remarks = Column(Text, nullable=True)
@@ -275,11 +225,7 @@ class Alert(Base):
 # -----------------------------------------------------------------------------
 
 def hash_pw(password: str) -> str:
-    # Standard dummy password hash (e.g. Argon2/SHA-256 for mock)
     return hashlib.sha256(password.encode("utf-8")).hexdigest()
-
-def random_rfid_uid() -> str:
-    return ":".join(f"{random.randint(0x10, 0xFF):02X}" for _ in range(4))
 
 def seed_database():
     print("=" * 70)
@@ -331,36 +277,7 @@ def seed_database():
             print(f"  • Created Tenant: {t.name} (Slug: {t.slug}, ID: {t.id})")
 
         # -------------------------------------------------------------------------
-        # 2. Seed Hardware Nodes (IoT Card Readers)
-        # -------------------------------------------------------------------------
-        print("\n📡 Seeding Hardware Ingestion Nodes...")
-        all_hardware_nodes: List[HardwareNode] = []
-        locations = [
-            ("GATE-01", "Main Campus Entrance Gate", None),
-            ("LAB-301", "Computer Science Advanced Lab", "Lab 301"),
-            ("LAB-204", "IoT & Embedded Systems Lab", "Lab 204"),
-            ("HALL-A", "Main Lecture Hall A", "LH-101"),
-        ]
-
-        for tenant in tenants:
-            for code, name, room in locations:
-                node = HardwareNode(
-                    tenant_id=tenant.id,
-                    node_code=f"{tenant.slug.upper()}-{code}",
-                    name=f"{name} ({tenant.slug.upper()})",
-                    room_number=room,
-                    mac_address=f"00:1B:44:{random.randint(10,99)}:{random.randint(10,99)}:{random.randint(10,99)}",
-                    api_key_hash=hashlib.sha256(f"{tenant.slug}-{code}-secret-key".encode()).hexdigest(),
-                    status="ACTIVE",
-                    last_heartbeat=datetime.now(timezone.utc)
-                )
-                session.add(node)
-                all_hardware_nodes.append(node)
-        session.flush()
-        print(f"  • Seeded {len(all_hardware_nodes)} IoT hardware scanners across 2 colleges.")
-
-        # -------------------------------------------------------------------------
-        # 3. Seed 2 Admins (1 per Tenant)
+        # 2. Seed 2 Admins (1 per Tenant)
         # -------------------------------------------------------------------------
         print("\n👑 Seeding 2 College Admins...")
         admins: List[User] = []
@@ -383,7 +300,7 @@ def seed_database():
             print(f"  • Admin: {a.full_name} | Email: {a.email} | Tenant: {a.tenant_id}")
 
         # -------------------------------------------------------------------------
-        # 4. Seed 10 Faculty Members (5 per Tenant)
+        # 3. Seed 10 Faculty Members (5 per Tenant)
         # -------------------------------------------------------------------------
         print("\n👨‍🏫 Seeding 10 Faculty Members (5 per college)...")
         departments = [
@@ -430,13 +347,13 @@ def seed_database():
         print(f"  • Created {len(all_faculty)} faculty members across {len(departments)} departments.")
 
         # -------------------------------------------------------------------------
-        # 5. Seed Courses per Tenant
+        # 4. Seed Courses per Tenant
         # -------------------------------------------------------------------------
         print("\n📚 Seeding Courses...")
         course_catalog = [
             ("CS301", "Distributed Systems & Cloud Computing", "Computer Science & Engineering", 4, 5),
             ("CS302", "Advanced Database Management", "Computer Science & Engineering", 3, 5),
-            ("EC201", "IoT Sensor Networks & Protocols", "Electronics & Communication", 4, 4),
+            ("EC201", "Digital Signal Processing & Protocols", "Electronics & Communication", 4, 4),
             ("DS401", "Applied Machine Learning & Deep Neural Nets", "Data Science & AI", 4, 7),
             ("IT202", "Web Systems & Microservice Architecture", "Information Technology", 3, 3),
             ("ME305", "Robotics & Automated Control", "Mechanical Engineering", 4, 6),
@@ -460,7 +377,7 @@ def seed_database():
         print(f"  • Seeded {len(all_courses)} course offerings across colleges.")
 
         # -------------------------------------------------------------------------
-        # 6. Seed 50 Students (25 per Tenant)
+        # 5. Seed 50 Students (25 per Tenant)
         # -------------------------------------------------------------------------
         print("\n🎓 Seeding 50 Students (25 per college)...")
         first_names = [
@@ -497,30 +414,7 @@ def seed_database():
         print(f"  • Seeded {len(all_students)} student profiles across 2 colleges.")
 
         # -------------------------------------------------------------------------
-        # 7. Seed Smart ID Profiles (RFID Cards for All Users)
-        # -------------------------------------------------------------------------
-        print("\n💳 Provisioning Smart ID Cards...")
-        all_smart_cards: List[SmartIdProfile] = []
-        assigned_admin_map = {tenants[0].id: admins[0].id, tenants[1].id: admins[1].id}
-
-        # Provision for Faculty & Students
-        for user in all_faculty + all_students:
-            card = SmartIdProfile(
-                tenant_id=user.tenant_id,
-                user_id=user.id,
-                card_uid=random_rfid_uid(),
-                card_type="MIFARE_CLASSIC",
-                status="ACTIVE",
-                assigned_by=assigned_admin_map[user.tenant_id]
-            )
-            session.add(card)
-            all_smart_cards.append(card)
-
-        session.flush()
-        print(f"  • Assigned {len(all_smart_cards)} Smart ID NFC/RFID cards.")
-
-        # -------------------------------------------------------------------------
-        # 8. Seed Master Timetables (Theory & Lab sessions)
+        # 6. Seed Master Timetables (Theory & Lab sessions)
         # -------------------------------------------------------------------------
         print("\n🗓️ Scheduling Master Timetables...")
         all_timetables: List[Timetable] = []
@@ -576,7 +470,7 @@ def seed_database():
         print(f"  • Generated {len(all_timetables)} timetable schedule blocks.")
 
         # -------------------------------------------------------------------------
-        # 9. Seed Course Enrollments
+        # 7. Seed Course Enrollments
         # -------------------------------------------------------------------------
         print("\n📝 Enrolling Students in Courses...")
         enrollments_count = 0
@@ -585,7 +479,6 @@ def seed_database():
             t_courses = [c for c in all_courses if c.tenant_id == tenant.id]
 
             for student in t_students:
-                # Enroll each student in matching department course + 2 general courses
                 matching_courses = [c for c in t_courses if c.department == student.department]
                 other_courses = [c for c in t_courses if c.department != student.department]
                 chosen_courses = matching_courses + other_courses[:2]
@@ -605,16 +498,15 @@ def seed_database():
         print(f"  • Created {enrollments_count} student course enrollments.")
 
         # -------------------------------------------------------------------------
-        # 10. Seed Realistic Attendance Logs (IoT Scans + Manual Overrides)
+        # 8. Seed Digital Attendance Logs (Faculty Entries + Overrides)
         # -------------------------------------------------------------------------
-        print("\n⏱️ Logging IoT & Manual Attendance Records...")
+        print("\n⏱️ Logging Session Attendance Records...")
         attendance_records_count = 0
         now = datetime.now(timezone.utc)
 
         for tenant in tenants:
             t_students = [s for s in all_students if s.tenant_id == tenant.id]
             t_timetables = [tt for tt in all_timetables if tt.tenant_id == tenant.id]
-            t_hw_nodes = [n for n in all_hardware_nodes if n.tenant_id == tenant.id]
 
             for day_offset in range(14, 0, -1):
                 log_date = (now - timedelta(days=day_offset)).date()
@@ -622,12 +514,9 @@ def seed_database():
                 if day_num > 5:
                     continue  # Skip weekends
 
-                # Find sessions on this day
                 active_sessions = [tt for tt in t_timetables if tt.day_of_week == day_num]
 
                 for session_slot in active_sessions:
-                    scanner = t_hw_nodes[0] if t_hw_nodes else None
-                    # Sample 15 students per session
                     sample_students = random.sample(t_students, min(len(t_students), 15))
 
                     for student in sample_students:
@@ -648,21 +537,20 @@ def seed_database():
                             tenant_id=tenant.id,
                             user_id=student.id,
                             timetable_id=session_slot.id,
-                            hardware_node_id=None if is_manual else (scanner.id if scanner else None),
                             timestamp=log_dt,
-                            source="MANUAL_OVERRIDE" if is_manual else "IOT_SCAN",
+                            source="MANUAL_OVERRIDE" if is_manual else "PORTAL_ENTRY",
                             status=status_val,
-                            verified_by=session_slot.faculty_id if is_manual else None,
-                            remarks="Marked by Faculty" if is_manual else "NFC Gate Scan Verified"
+                            verified_by=session_slot.faculty_id,
+                            remarks="Updated by Faculty" if is_manual else "Class Session Roll Call"
                         )
                         session.add(att)
                         attendance_records_count += 1
 
         session.flush()
-        print(f"  • Recorded {attendance_records_count} historical attendance log entries.")
+        print(f"  • Recorded {attendance_records_count} attendance log entries.")
 
         # -------------------------------------------------------------------------
-        # 11. Seed Assessment Records (Evaluations, Midterms, Lab Viva)
+        # 9. Seed Assessment Records (Evaluations, Midterms, Lab Viva)
         # -------------------------------------------------------------------------
         print("\n📊 Recording Assessment Scores & Evaluations...")
         assessment_types = [
@@ -680,9 +568,7 @@ def seed_database():
             for course in t_courses:
                 evaluator = random.choice(t_faculty)
                 for a_type, a_name, max_sc in assessment_types:
-                    # Score for random subset of students
                     for student in random.sample(t_students, 12):
-                        # Realistic score between 60% and 98%
                         scored = round(random.uniform(0.60 * max_sc, 0.98 * max_sc), 1)
                         record = AssessmentRecord(
                             tenant_id=tenant.id,
@@ -702,13 +588,13 @@ def seed_database():
         print(f"  • Recorded {assessments_count} academic evaluation records.")
 
         # -------------------------------------------------------------------------
-        # 12. Seed Alerts (Institutional & Department Announcements)
+        # 10. Seed Alerts (Institutional & Department Announcements)
         # -------------------------------------------------------------------------
         print("\n📢 Publishing Campus Alerts & Notifications...")
         alert_templates = [
-            ("Smart ID Tap Required for Semester Labs", "All students must tap their physical Smart ID badge at the entrance scanner of Lab 301 before entering session.", "STUDENT", "ALL", "HIGH"),
+            ("Digital Attendance Verification Policy", "Faculty members are requested to complete digital session attendance within 15 minutes of class commencement.", "FACULTY", "ALL", "HIGH"),
             ("Mid-Term Grade Submission Window Open", "Faculty members are requested to upload laboratory and theory evaluations into the gradebook by Friday.", "FACULTY", "ALL", "NORMAL"),
-            ("IoT Hardware System Maintenance Notice", "Campus RFID gate readers will undergo scheduled firmware updates this Sunday from 2:00 AM to 4:00 AM.", "ALL", "ALL", "LOW"),
+            ("Semester Timetable Finalized", "The revised semester timetable for theory and lab batches is now active.", "ALL", "ALL", "LOW"),
             ("Shortage Warning: Attendance Threshold Policy", "Students maintaining attendance below 75% will be flagged automatically for academic review.", "STUDENT", "Computer Science & Engineering", "URGENT")
         ]
 
@@ -739,11 +625,9 @@ def seed_database():
         print("🎉 DATABASE SEEDING COMPLETED SUCCESSFULLY!")
         print("=" * 70)
         print(f"• Total Colleges / Tenants:     {session.query(Tenant).count()}")
-        print(f"• Total Hardware IoT Nodes:     {session.query(HardwareNode).count()}")
         print(f"• Total Admins:                 {session.query(User).filter_by(role='ADMIN').count()}")
         print(f"• Total Faculty Members:        {session.query(User).filter_by(role='FACULTY').count()}")
         print(f"• Total Students:               {session.query(User).filter_by(role='STUDENT').count()}")
-        print(f"• Total Smart ID Profiles:      {session.query(SmartIdProfile).count()}")
         print(f"• Total Courses:                {session.query(Course).count()}")
         print(f"• Total Timetable Slots:        {session.query(Timetable).count()}")
         print(f"• Total Course Enrollments:     {session.query(CourseEnrollment).count()}")

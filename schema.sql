@@ -1,6 +1,6 @@
 -- =============================================================================
 -- AcadNexa — Database Schema Specification (PostgreSQL 16+)
--- Multi-Tenant IoT-Integrated Campus Management & Academic System
+-- Multi-Tenant Campus Management & Academic System
 -- =============================================================================
 
 -- Enable required extensions
@@ -99,65 +99,7 @@ CREATE TRIGGER trg_users_updated_at
     EXECUTE FUNCTION update_updated_at_column();
 
 -- =============================================================================
--- 4. HARDWARE NODES (IoT RFID/NFC Readers & Class Scanners)
--- =============================================================================
-CREATE TABLE IF NOT EXISTS hardware_nodes (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    college_id UUID NOT NULL
-        REFERENCES colleges(id) ON DELETE CASCADE,
-    node_code VARCHAR(64) NOT NULL,
-    name VARCHAR(128) NOT NULL,
-    room_number VARCHAR(64),
-    mac_address VARCHAR(32),
-    api_key_hash VARCHAR(255) NOT NULL,
-    status VARCHAR(20) NOT NULL DEFAULT 'active'
-        CHECK (status IN ('active', 'maintenance', 'offline')),
-    last_heartbeat TIMESTAMPTZ,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
-    CONSTRAINT uq_hardware_nodes_college_code UNIQUE (college_id, node_code)
-);
-
-CREATE INDEX IF NOT EXISTS idx_hardware_nodes_college_status ON hardware_nodes(college_id, status);
-
-DROP TRIGGER IF EXISTS trg_hardware_nodes_updated_at ON hardware_nodes;
-CREATE TRIGGER trg_hardware_nodes_updated_at
-    BEFORE UPDATE ON hardware_nodes
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
-
--- =============================================================================
--- 5. SMART ID PROFILES (ENT-02: RFID / NFC Tag Assignment)
--- =============================================================================
-CREATE TABLE IF NOT EXISTS smart_id_profiles (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    college_id UUID NOT NULL
-        REFERENCES colleges(id) ON DELETE CASCADE,
-    user_id UUID NOT NULL
-        REFERENCES users(id) ON DELETE CASCADE,
-    card_uid VARCHAR(64) NOT NULL,
-    card_type VARCHAR(32) NOT NULL DEFAULT 'MIFARE_CLASSIC',
-    status VARCHAR(20) NOT NULL DEFAULT 'active'
-        CHECK (status IN ('active', 'suspended', 'lost', 'expired')),
-    issued_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
-    assigned_by UUID
-        REFERENCES users(id) ON DELETE SET NULL,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
-    CONSTRAINT uq_smart_id_college_user UNIQUE (college_id, user_id),
-    CONSTRAINT uq_smart_id_college_card UNIQUE (college_id, card_uid)
-);
-
-CREATE INDEX IF NOT EXISTS idx_smart_id_lookup ON smart_id_profiles(college_id, card_uid, status);
-CREATE INDEX IF NOT EXISTS idx_smart_id_user ON smart_id_profiles(college_id, user_id);
-
-DROP TRIGGER IF EXISTS trg_smart_id_profiles_updated_at ON smart_id_profiles;
-CREATE TRIGGER trg_smart_id_profiles_updated_at
-    BEFORE UPDATE ON smart_id_profiles
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
-
--- =============================================================================
--- 6. COURSES (Curriculum & Academic Subjects)
+-- 4. COURSES (Curriculum & Academic Subjects)
 -- =============================================================================
 CREATE TABLE IF NOT EXISTS courses (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -185,7 +127,7 @@ CREATE TRIGGER trg_courses_updated_at
     EXECUTE FUNCTION update_updated_at_column();
 
 -- =============================================================================
--- 7. COURSE ENROLLMENTS (Student Course & Lab Batch Registrations)
+-- 5. COURSE ENROLLMENTS (Student Course & Lab Batch Registrations)
 -- =============================================================================
 CREATE TABLE IF NOT EXISTS course_enrollments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -205,7 +147,7 @@ CREATE INDEX IF NOT EXISTS idx_enrollments_student ON course_enrollments(college
 CREATE INDEX IF NOT EXISTS idx_enrollments_course ON course_enrollments(college_id, course_id, batch_name);
 
 -- =============================================================================
--- 8. TIMETABLES (ENT-04: Master Theory & Lab Scheduling)
+-- 6. TIMETABLES (Master Theory & Lab Scheduling)
 -- =============================================================================
 CREATE TABLE IF NOT EXISTS timetables (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -242,7 +184,7 @@ CREATE TRIGGER trg_timetables_updated_at
     EXECUTE FUNCTION update_updated_at_column();
 
 -- =============================================================================
--- 9. ATTENDANCE LOGS (ENT-03: Real-Time IoT Scans & Manual Overrides)
+-- 7. ATTENDANCE LOGS (Digital Attendance Records & Manual Overrides)
 -- =============================================================================
 CREATE TABLE IF NOT EXISTS attendance_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -252,11 +194,9 @@ CREATE TABLE IF NOT EXISTS attendance_logs (
         REFERENCES users(id) ON DELETE CASCADE,
     timetable_id UUID
         REFERENCES timetables(id) ON DELETE SET NULL,
-    hardware_node_id UUID
-        REFERENCES hardware_nodes(id) ON DELETE SET NULL,
     timestamp TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
-    source VARCHAR(32) NOT NULL DEFAULT 'IOT_SCAN'
-        CHECK (source IN ('IOT_SCAN', 'MANUAL_OVERRIDE', 'MOBILE_QR')),
+    source VARCHAR(32) NOT NULL DEFAULT 'PORTAL_ENTRY'
+        CHECK (source IN ('PORTAL_ENTRY', 'MANUAL_OVERRIDE', 'MOBILE_QR')),
     status VARCHAR(20) NOT NULL DEFAULT 'PRESENT'
         CHECK (status IN ('PRESENT', 'ABSENT', 'LATE', 'EXCUSED')),
     verified_by UUID
@@ -270,7 +210,7 @@ CREATE INDEX IF NOT EXISTS idx_attendance_timetable ON attendance_logs(college_i
 CREATE INDEX IF NOT EXISTS idx_attendance_timestamp ON attendance_logs(college_id, timestamp DESC);
 
 -- =============================================================================
--- 10. ASSESSMENT RECORDS (ENT-05: Scores, Midterms, Practicals & Evaluations)
+-- 8. ASSESSMENT RECORDS (Scores, Midterms, Practicals & Evaluations)
 -- =============================================================================
 CREATE TABLE IF NOT EXISTS assessment_records (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -306,7 +246,7 @@ CREATE TRIGGER trg_assessment_records_updated_at
     EXECUTE FUNCTION update_updated_at_column();
 
 -- =============================================================================
--- 11. ALERTS (ENT-06: Broadcast Notices & Urgent Communications)
+-- 9. ALERTS (Broadcast Notices & Communications)
 -- =============================================================================
 CREATE TABLE IF NOT EXISTS alerts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -336,13 +276,11 @@ CREATE TRIGGER trg_alerts_updated_at
     EXECUTE FUNCTION update_updated_at_column();
 
 -- =============================================================================
--- 12. ROW-LEVEL SECURITY (RLS) POLICIES
+-- 10. ROW-LEVEL SECURITY (RLS) POLICIES
 -- =============================================================================
 
 ALTER TABLE departments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE hardware_nodes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE smart_id_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE courses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE course_enrollments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE timetables ENABLE ROW LEVEL SECURITY;
@@ -357,9 +295,8 @@ DECLARE
 BEGIN
     FOR tbl IN
         SELECT unnest(ARRAY[
-            'departments', 'users', 'hardware_nodes', 'smart_id_profiles',
-            'courses', 'course_enrollments', 'timetables', 'attendance_logs',
-            'assessment_records', 'alerts'
+            'departments', 'users', 'courses', 'course_enrollments',
+            'timetables', 'attendance_logs', 'assessment_records', 'alerts'
         ])
     LOOP
         EXECUTE format('DROP POLICY IF EXISTS tenant_isolation_policy ON %I', tbl);
