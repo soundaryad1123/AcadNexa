@@ -1,0 +1,33 @@
+from app.models.entities import (
+    College,
+    Department,
+    User,
+    Admin,
+    Faculty,
+    Student,
+    Course,
+    CourseEnrollment,
+    CourseMaterial,
+    AcademicCalendar,
+    Announcement,
+    Timetable,
+    Attendance,
+    Grade,
+)
+
+__all__ = [
+    "College",
+    "Department",
+    "User",
+    "Admin",
+    "Faculty",
+    "Student",
+    "Course",
+    "CourseEnrollment",
+    "CourseMaterial",
+    "AcademicCalendar",
+    "Announcement",
+    "Timetable",
+    "Attendance",
+    "Grade",
+]

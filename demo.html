@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AcadNexa — Student Portal Dashboard</title>
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            heading: ['Outfit', 'sans-serif'],
+          },
+          colors: {
+            background: '#090D16',
+            surface: '#0F172A',
+            card: '#131D33',
+            border: '#1E293B',
+            primary: {
+              DEFAULT: '#4F46E5',
+              50: '#EEF2FF',
+              100: '#E0E7FF',
+              400: '#818CF8',
+              500: '#6366F1',
+              600: '#4F46E5',
+              700: '#4338CA',
+            },
+            accent: {
+              emerald: '#10B981',
+              amber: '#F59E0B',
+              rose: '#F43F5E',
+              sky: '#0EA5E9',
+              purple: '#A855F7',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #090D16;
+      color: #F1F5F9;
+      font-family: 'Inter', sans-serif;
+    }
+    .glass-card {
+      background: rgba(19, 29, 51, 0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-card-hover:hover {
+      border-color: rgba(99, 102, 241, 0.4);
+      box-shadow: 0 10px 30px -10px rgba(79, 70, 229, 0.25);
+    }
+    .glow-indigo {
+      box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.35);
+    }
+    .glow-emerald {
+      box-shadow: 0 0 20px -5px rgba(16, 185, 129, 0.3);
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #090D16;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1E293B;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex antialiased selection:bg-primary-500 selection:text-white">
+
+  <!-- ========================================================================= -->
+  <!-- SIDEBAR NAVIGATION -->
+  <!-- ========================================================================= -->
+  <aside class="w-64 bg-surface border-r border-border flex flex-col justify-between hidden md:flex shrink-0 sticky top-0 h-screen z-30">
+    <div>
+      <!-- Institutional Branding -->
+      <div class="h-20 flex items-center gap-3 px-6 border-b border-border">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary-600 to-indigo-400 flex items-center justify-center text-white shadow-lg glow-indigo">
+          <i data-lucide="graduation-cap" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h1 class="font-heading font-extrabold text-lg tracking-tight bg-gradient-to-r from-white via-slate-100 to-indigo-300 bg-clip-text text-transparent">AcadNexa</h1>
+          <p class="text-[10px] text-slate-400 font-medium tracking-wider uppercase">Apex Inst. of Tech</p>
+        </div>
+      </div>
+
+      <!-- User Role Indicator Pill -->
+      <div class="px-6 py-4">
+        <div class="flex items-center justify-between px-3 py-2 bg-slate-900/80 rounded-lg border border-border">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-accent-emerald animate-pulse"></span>
+            <span class="text-xs font-semibold text-slate-300">Student Portal</span>
+          </div>
+          <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-primary-950 text-primary-400 border border-primary-800/60">Sem 5</span>
+        </div>
+      </div>
+
+      <!-- Navigation Links -->
+      <nav class="px-4 space-y-1.5 mt-2">
+        <a href="#dashboard" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-primary-600 text-white font-medium text-sm shadow-md glow-indigo transition-all">
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="#attendance" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 font-medium text-sm transition-all group">
+          <i data-lucide="calendar-check" class="w-4 h-4 group-hover:text-primary-400 transition-colors"></i>
+          <span>Attendance Hub</span>
+          <span class="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full bg-accent-emerald/20 text-accent-emerald">92.4%</span>
+        </a>
+        <a href="#timetable" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 font-medium text-sm transition-all group">
+          <i data-lucide="clock" class="w-4 h-4 group-hover:text-primary-400 transition-colors"></i>
+          <span>Class Timetable</span>
+        </a>
+        <a href="#grades" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 font-medium text-sm transition-all group">
+          <i data-lucide="award" class="w-4 h-4 group-hover:text-primary-400 transition-colors"></i>
+          <span>Grades & CGPA</span>
+          <span class="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300">9.42</span>
+        </a>
+        <a href="#materials" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 font-medium text-sm transition-all group">
+          <i data-lucide="folder-open" class="w-4 h-4 group-hover:text-primary-400 transition-colors"></i>
+          <span>Course Materials</span>
+        </a>
+        <a href="#announcements" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 font-medium text-sm transition-all group">
+          <i data-lucide="megaphone" class="w-4 h-4 group-hover:text-primary-400 transition-colors"></i>
+          <span>Announcements</span>
+          <span class="ml-auto w-2 h-2 rounded-full bg-accent-rose"></span>
+        </a>
+        <a href="#profile" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 font-medium text-sm transition-all group">
+          <i data-lucide="user" class="w-4 h-4 group-hover:text-primary-400 transition-colors"></i>
+          <span>My Profile</span>
+        </a>
+      </nav>
+    </div>
+
+    <!-- Student Profile Footer Card -->
+    <div class="p-4 border-t border-border">
+      <div class="p-3 rounded-xl bg-slate-900/90 border border-border flex items-center gap-3">
+        <div class="relative">
+          <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
+            AS
+          </div>
+          <span class="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-accent-emerald border-2 border-slate-900"></span>
+        </div>
+        <div class="overflow-hidden">
+          <h4 class="text-sm font-semibold text-white truncate">Aarav Sharma</h4>
+          <p class="text-xs text-slate-400 truncate">1AT23CS001</p>
+        </div>
+        <button class="ml-auto text-slate-400 hover:text-white transition-colors" title="Settings">
+          <i data-lucide="log-out" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ========================================================================= -->
+  <!-- MAIN CONTENT AREA -->
+  <!-- ========================================================================= -->
+  <div class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+    
+    <!-- TOP NAVBAR -->
+    <header class="h-20 bg-surface/80 backdrop-blur-md border-b border-border px-6 md:px-8 flex items-center justify-between sticky top-0 z-20">
+      <!-- Search Bar -->
+      <div class="relative max-w-md w-full hidden sm:block">
+        <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+        <input 
+          type="text" 
+          placeholder="Search subjects, timetable, notes, faculty..." 
+          class="w-full bg-slate-900/90 border border-border text-xs rounded-xl pl-10 pr-4 py-2.5 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all"
+        />
+      </div>
+
+      <!-- Quick Actions & Alerts -->
+      <div class="flex items-center gap-4 ml-auto">
+        <!-- Academic Term Badge -->
+        <div class="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-indigo-950/60 border border-indigo-800/40 text-xs text-indigo-300 font-medium">
+          <i data-lucide="calendar" class="w-3.5 h-3.5 text-indigo-400"></i>
+          <span>Academic Year 2025-2026 (Odd Sem)</span>
+        </div>
+
+        <!-- Notification Bell -->
+        <button class="relative p-2.5 rounded-xl bg-slate-900 border border-border text-slate-300 hover:text-white hover:border-slate-700 transition-all">
+          <i data-lucide="bell" class="w-4 h-4"></i>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-accent-rose rounded-full animate-ping"></span>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-accent-rose rounded-full"></span>
+        </button>
+
+        <!-- Profile Quick Dropdown Trigger -->
+        <div class="flex items-center gap-3 pl-2 border-l border-border">
+          <div class="text-right hidden sm:block">
+            <p class="text-xs font-semibold text-white leading-none">Aarav Sharma</p>
+            <p class="text-[11px] text-slate-400 mt-0.5">B.Tech - CSE</p>
+          </div>
+          <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-primary-600 to-indigo-400 flex items-center justify-center text-white font-bold text-xs shadow-md">
+            AS
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- DASHBOARD VIEW BODY -->
+    <main class="p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
+      
+      <!-- HERO WELCOME BANNER -->
+      <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-900/80 via-primary-950 to-slate-900 border border-indigo-500/20 p-6 md:p-8 shadow-xl">
+        <div class="absolute -right-12 -top-12 w-64 h-64 bg-primary-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div class="space-y-2">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-500/20 border border-primary-500/30 text-primary-300 text-xs font-semibold">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+              <span>Student Overview Dashboard</span>
+            </div>
+            <h2 class="text-2xl md:text-3xl font-heading font-extrabold text-white tracking-tight">
+              Welcome back, <span class="bg-gradient-to-r from-indigo-200 via-white to-indigo-300 bg-clip-text text-transparent">Aarav Sharma</span> 👋
+            </h2>
+            <p class="text-slate-400 text-xs md:text-sm max-w-xl">
+              Department of Computer Science & Engineering • Section A • University Roll No: <strong class="text-slate-200">1AT23CS001</strong>
+            </p>
+          </div>
+
+          <!-- Quick Stat KPI Pills -->
+          <div class="flex items-center gap-3">
+            <div class="px-4 py-3 rounded-xl bg-slate-900/80 border border-border text-center min-w-[100px]">
+              <span class="text-[11px] text-slate-400 font-medium block">Current CGPA</span>
+              <span class="text-xl font-heading font-extrabold text-white">9.42</span>
+            </div>
+            <div class="px-4 py-3 rounded-xl bg-slate-900/80 border border-border text-center min-w-[100px]">
+              <span class="text-[11px] text-slate-400 font-medium block">Attendance</span>
+              <span class="text-xl font-heading font-extrabold text-accent-emerald">92.4%</span>
+            </div>
+            <div class="px-4 py-3 rounded-xl bg-slate-900/80 border border-border text-center min-w-[100px]">
+              <span class="text-[11px] text-slate-400 font-medium block">Enrolled Credits</span>
+              <span class="text-xl font-heading font-extrabold text-primary-400">14</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================================================================== -->
+      <!-- TOP BENTO GRID ROW: ATTENDANCE VITALITY & NEXT UPCOMING CLASS -->
+      <!-- ===================================================================== -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- ATTENDANCE VITALITY RING CARD (STD-01) -->
+        <div class="glass-card rounded-2xl p-6 relative overflow-hidden transition-all glass-card-hover flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2.5">
+              <div class="p-2 rounded-lg bg-emerald-500/10 text-accent-emerald border border-emerald-500/20">
+                <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+              </div>
+              <h3 class="font-heading font-bold text-sm text-white">Attendance Vitality</h3>
+            </div>
+            <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800/60">Safe Status</span>
+          </div>
+
+          <!-- Circular SVG Radial Progress -->
+          <div class="flex items-center justify-center my-3 relative">
+            <div class="relative w-36 h-36 flex items-center justify-center">
+              <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                <!-- Background Circle -->
+                <circle cx="50" cy="50" r="42" stroke="currentColor" stroke-width="8" class="text-slate-800" fill="transparent" />
+                <!-- Progress Circle (92.4% -> dashoffset = 264 * (1 - 0.924) = ~20) -->
+                <circle 
+                  cx="50" 
+                  cy="50" 
+                  r="42" 
+                  stroke="currentColor" 
+                  stroke-width="8" 
+                  stroke-dasharray="264" 
+                  stroke-dashoffset="20" 
+                  stroke-linecap="round" 
+                  class="text-accent-emerald transition-all duration-1000 ease-out" 
+                  fill="transparent" 
+                />
+              </svg>
+              <div class="absolute flex flex-col items-center justify-center text-center">
+                <span class="text-2xl font-heading font-black text-white">92.4%</span>
+                <span class="text-[10px] text-slate-400 font-medium">Overall Rate</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Attendance Details Footer -->
+          <div class="pt-3 border-t border-border grid grid-cols-2 gap-2 text-center text-xs">
+            <div class="bg-slate-900/60 p-2 rounded-lg">
+              <span class="text-slate-400 text-[10px] block">Attended Sessions</span>
+              <span class="font-bold text-white text-sm">37 / 40</span>
+            </div>
+            <div class="bg-slate-900/60 p-2 rounded-lg">
+              <span class="text-slate-400 text-[10px] block">Shortage Margin</span>
+              <span class="font-bold text-accent-emerald text-sm">+7 Classes Buffer</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- NEXT SCHEDULED SESSION CARD (STD-02) -->
+        <div class="glass-card rounded-2xl p-6 relative overflow-hidden transition-all glass-card-hover flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-2.5">
+                <div class="p-2 rounded-lg bg-primary-500/10 text-primary-400 border border-primary-500/20">
+                  <i data-lucide="radio" class="w-4 h-4 animate-pulse"></i>
+                </div>
+                <h3 class="font-heading font-bold text-sm text-white">Next Upcoming Class</h3>
+              </div>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-primary-950 text-primary-300 border border-primary-800/60">Starts in 25m</span>
+            </div>
+
+            <!-- Subject Details -->
+            <div class="p-4 rounded-xl bg-gradient-to-br from-slate-900 to-indigo-950/40 border border-indigo-500/20 mb-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-mono font-bold text-primary-400">CS502 • CORE THEORY</span>
+                <span class="text-xs font-medium text-slate-300">10:00 AM - 11:00 AM</span>
+              </div>
+              <h4 class="text-lg font-heading font-bold text-white mt-1">Database Management Systems</h4>
+              <p class="text-xs text-slate-400 mt-1">Lecture Hall 301 (CSE Academic Wing)</p>
+            </div>
+          </div>
+
+          <!-- Instructor Info & Room -->
+          <div class="flex items-center justify-between pt-3 border-t border-border">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-slate-300">
+                AV
+              </div>
+              <div>
+                <p class="text-xs font-semibold text-white">Dr. Amit Verma</p>
+                <p class="text-[10px] text-slate-400">Assistant Professor</p>
+              </div>
+            </div>
+            <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-600 text-white text-xs font-medium shadow glow-indigo">
+              <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
+              <span>LH-301</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- RECENT ACADEMIC ALERT HIGHLIGHT (STD-05) -->
+        <div class="glass-card rounded-2xl p-6 relative overflow-hidden transition-all glass-card-hover flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-2.5">
+                <div class="p-2 rounded-lg bg-rose-500/10 text-accent-rose border border-rose-500/20">
+                  <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                </div>
+                <h3 class="font-heading font-bold text-sm text-white">Urgent Notice</h3>
+              </div>
+              <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-800/60">Placement</span>
+            </div>
+
+            <h4 class="text-base font-heading font-bold text-white mb-2 leading-snug">
+              🚀 Google & Microsoft Cloud Engineering Placement Drive
+            </h4>
+            <p class="text-xs text-slate-400 leading-relaxed line-clamp-3">
+              Eligible 5th & 7th semester students with CGPA &ge; 8.5 must submit their resume & register on the training portal before Friday 5:00 PM for the upcoming coding assessments.
+            </p>
+          </div>
+
+          <div class="flex items-center justify-between pt-3 border-t border-border text-xs">
+            <span class="text-slate-500 text-[11px]">Published by Dean of Placements</span>
+            <a href="#announcements" class="text-primary-400 hover:text-primary-300 font-medium inline-flex items-center gap-1 transition-colors">
+              <span>View details</span>
+              <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================================================================== -->
+      <!-- MIDDLE ROW: COURSE ATTENDANCE PROGRESS & TODAY'S TIMETABLE -->
+      <!-- ===================================================================== -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- SUBJECT-WISE ATTENDANCE BREAKDOWN (STD-01) -->
+        <div class="glass-card rounded-2xl p-6 lg:col-span-2">
+          <div class="flex items-center justify-between mb-6">
+            <div>
+              <h3 class="font-heading font-bold text-base text-white">Course Attendance Breakdown</h3>
+              <p class="text-xs text-slate-400">Real-time status calculated against 75% minimum university criteria</p>
+            </div>
+            <a href="#attendance" class="text-xs font-semibold text-primary-400 hover:text-primary-300 flex items-center gap-1 transition-colors">
+              <span>Full Attendance Hub</span>
+              <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+            </a>
+          </div>
+
+          <!-- Course Progress List -->
+          <div class="space-y-4">
+            
+            <!-- Item 1: CS501 -->
+            <div class="p-3.5 rounded-xl bg-slate-900/70 border border-border/80">
+              <div class="flex items-center justify-between mb-2">
+                <div>
+                  <span class="text-xs font-mono font-bold text-indigo-400">CS501</span>
+                  <span class="text-sm font-semibold text-white ml-2">Data Structures & Algorithms</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs text-slate-400 font-medium">10 / 10 classes</span>
+                  <span class="text-xs font-bold text-accent-emerald px-2 py-0.5 rounded bg-emerald-950/80 border border-emerald-800/40">100.0%</span>
+                </div>
+              </div>
+              <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                <div class="bg-accent-emerald h-full rounded-full" style="width: 100%;"></div>
+              </div>
+            </div>
+
+            <!-- Item 2: CS502 -->
+            <div class="p-3.5 rounded-xl bg-slate-900/70 border border-border/80">
+              <div class="flex items-center justify-between mb-2">
+                <div>
+                  <span class="text-xs font-mono font-bold text-indigo-400">CS502</span>
+                  <span class="text-sm font-semibold text-white ml-2">Database Management Systems</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs text-slate-400 font-medium">9 / 10 classes</span>
+                  <span class="text-xs font-bold text-accent-emerald px-2 py-0.5 rounded bg-emerald-950/80 border border-emerald-800/40">90.0%</span>
+                </div>
+              </div>
+              <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                <div class="bg-accent-emerald h-full rounded-full" style="width: 90%;"></div>
+              </div>
+            </div>
+
+            <!-- Item 3: CS503 -->
+            <div class="p-3.5 rounded-xl bg-slate-900/70 border border-border/80">
+              <div class="flex items-center justify-between mb-2">
+                <div>
+                  <span class="text-xs font-mono font-bold text-indigo-400">CS503</span>
+                  <span class="text-sm font-semibold text-white ml-2">Operating Systems & Architecture</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs text-slate-400 font-medium">9 / 10 classes</span>
+                  <span class="text-xs font-bold text-accent-emerald px-2 py-0.5 rounded bg-emerald-950/80 border border-emerald-800/40">90.0%</span>
+                </div>
+              </div>
+              <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                <div class="bg-accent-emerald h-full rounded-full" style="width: 90%;"></div>
+              </div>
+            </div>
+
+            <!-- Item 4: CS504 -->
+            <div class="p-3.5 rounded-xl bg-slate-900/70 border border-border/80">
+              <div class="flex items-center justify-between mb-2">
+                <div>
+                  <span class="text-xs font-mono font-bold text-indigo-400">CS504</span>
+                  <span class="text-sm font-semibold text-white ml-2">Artificial Intelligence & ML</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs text-slate-400 font-medium">9 / 10 classes</span>
+                  <span class="text-xs font-bold text-accent-emerald px-2 py-0.5 rounded bg-emerald-950/80 border border-emerald-800/40">90.0%</span>
+                </div>
+              </div>
+              <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                <div class="bg-accent-emerald h-full rounded-full" style="width: 90%;"></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- TODAY'S SCHEDULE TIMELINE (STD-02) -->
+        <div class="glass-card rounded-2xl p-6 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-heading font-bold text-base text-white">Today's Schedule</h3>
+              <span class="text-xs font-medium text-slate-400">Monday</span>
+            </div>
+
+            <!-- Schedule Timeline List -->
+            <div class="space-y-3 relative before:absolute before:left-3.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-slate-800">
+              
+              <!-- Slot 1 (Completed) -->
+              <div class="flex items-start gap-3 relative">
+                <div class="w-7 h-7 rounded-full bg-emerald-500/20 text-accent-emerald border border-emerald-500/40 flex items-center justify-center shrink-0 z-10">
+                  <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                </div>
+                <div class="flex-1 bg-slate-900/60 p-2.5 rounded-xl border border-border">
+                  <div class="flex justify-between text-xs">
+                    <span class="font-bold text-white">CS501: Data Structures</span>
+                    <span class="text-slate-400">09:00 - 10:00</span>
+                  </div>
+                  <p class="text-[11px] text-slate-400">LH-301 • Prof. Priya Sharma</p>
+                </div>
+              </div>
+
+              <!-- Slot 2 (Current / Next) -->
+              <div class="flex items-start gap-3 relative">
+                <div class="w-7 h-7 rounded-full bg-primary-600 text-white flex items-center justify-center shrink-0 z-10 shadow glow-indigo">
+                  <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+                </div>
+                <div class="flex-1 bg-primary-950/40 p-2.5 rounded-xl border border-primary-500/30">
+                  <div class="flex justify-between text-xs">
+                    <span class="font-bold text-white">CS502: DBMS</span>
+                    <span class="text-primary-300 font-semibold">10:00 - 11:00</span>
+                  </div>
+                  <p class="text-[11px] text-slate-400">LH-301 • Dr. Amit Verma</p>
+                </div>
+              </div>
+
+              <!-- Slot 3 -->
+              <div class="flex items-start gap-3 relative">
+                <div class="w-7 h-7 rounded-full bg-slate-800 text-slate-400 border border-slate-700 flex items-center justify-center shrink-0 z-10">
+                  <span class="text-[10px] font-bold">3</span>
+                </div>
+                <div class="flex-1 bg-slate-900/60 p-2.5 rounded-xl border border-border">
+                  <div class="flex justify-between text-xs">
+                    <span class="font-semibold text-slate-300">CS503: Operating Systems</span>
+                    <span class="text-slate-400">11:15 - 12:15</span>
+                  </div>
+                  <p class="text-[11px] text-slate-400">LH-301 • Dr. Amit Verma</p>
+                </div>
+              </div>
+
+              <!-- Slot 4 (Lab) -->
+              <div class="flex items-start gap-3 relative">
+                <div class="w-7 h-7 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/40 flex items-center justify-center shrink-0 z-10">
+                  <i data-lucide="flask-conical" class="w-3.5 h-3.5"></i>
+                </div>
+                <div class="flex-1 bg-slate-900/60 p-2.5 rounded-xl border border-border">
+                  <div class="flex justify-between text-xs">
+                    <span class="font-semibold text-purple-300">CS501: Data Structures Lab</span>
+                    <span class="text-slate-400">14:15 - 16:15</span>
+                  </div>
+                  <p class="text-[11px] text-slate-400">CS-LAB-2 • Prof. Priya Sharma</p>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <a href="#timetable" class="mt-4 block text-center py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-xs font-semibold text-slate-300 border border-border transition-colors">
+            View Complete 6-Day Timetable
+          </a>
+        </div>
+      </div>
+
+      <!-- ===================================================================== -->
+      <!-- BOTTOM ROW: RECENT EVALUATIONS / GRADES (STD-03) -->
+      <!-- ===================================================================== -->
+      <div class="glass-card rounded-2xl p-6">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="font-heading font-bold text-base text-white">Recent Evaluation Records & Grades</h3>
+            <p class="text-xs text-slate-400">Continuous Internal Evaluations (CIE), Lab Practicals & Term Results</p>
+          </div>
+          <a href="#grades" class="text-xs font-semibold text-primary-400 hover:text-primary-300 flex items-center gap-1 transition-colors">
+            <span>View Full Gradebook</span>
+            <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+          </a>
+        </div>
+
+        <!-- Data Table -->
+        <div class="overflow-x-auto rounded-xl border border-border">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-900/90 text-slate-400 border-b border-border uppercase font-semibold text-[10px] tracking-wider">
+              <tr>
+                <th class="px-4 py-3">Course Code & Name</th>
+                <th class="px-4 py-3">Assessment Name</th>
+                <th class="px-4 py-3">Type</th>
+                <th class="px-4 py-3 text-right">Marks Scored</th>
+                <th class="px-4 py-3 text-center">Grade Letter</th>
+                <th class="px-4 py-3">Evaluator Remarks</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-border/60 text-slate-300">
+              
+              <tr class="hover:bg-slate-900/40 transition-colors">
+                <td class="px-4 py-3 font-semibold text-white">
+                  <span class="text-primary-400 font-mono">CS501</span> • Data Structures
+                </td>
+                <td class="px-4 py-3">CIE Test 2 (Dynamic Programming)</td>
+                <td class="px-4 py-3">
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-950 text-indigo-300 border border-indigo-800/40">INTERNAL_2</span>
+                </td>
+                <td class="px-4 py-3 text-right font-bold text-white font-mono">29.00 / 30.00</td>
+                <td class="px-4 py-3 text-center">
+                  <span class="px-2 py-0.5 rounded text-xs font-extrabold bg-emerald-950 text-accent-emerald border border-emerald-800/60">O (10.0)</span>
+                </td>
+                <td class="px-4 py-3 text-slate-400 italic">Flawless DP memoization proof</td>
+              </tr>
+
+              <tr class="hover:bg-slate-900/40 transition-colors">
+                <td class="px-4 py-3 font-semibold text-white">
+                  <span class="text-primary-400 font-mono">CS502</span> • Database Management
+                </td>
+                <td class="px-4 py-3">CIE Test 2 (Normalization & SQL)</td>
+                <td class="px-4 py-3">
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-950 text-indigo-300 border border-indigo-800/40">INTERNAL_2</span>
+                </td>
+                <td class="px-4 py-3 text-right font-bold text-white font-mono">28.00 / 30.00</td>
+                <td class="px-4 py-3 text-center">
+                  <span class="px-2 py-0.5 rounded text-xs font-extrabold bg-emerald-950 text-accent-emerald border border-emerald-800/60">O (10.0)</span>
+                </td>
+                <td class="px-4 py-3 text-slate-400 italic">Mastered BCNF & SQL indexing</td>
+              </tr>
+
+              <tr class="hover:bg-slate-900/40 transition-colors">
+                <td class="px-4 py-3 font-semibold text-white">
+                  <span class="text-primary-400 font-mono">CS501</span> • Data Structures
+                </td>
+                <td class="px-4 py-3">CIE Test 1 (Trees & Graphs)</td>
+                <td class="px-4 py-3">
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-950 text-indigo-300 border border-indigo-800/40">INTERNAL_1</span>
+                </td>
+                <td class="px-4 py-3 text-right font-bold text-white font-mono">28.50 / 30.00</td>
+                <td class="px-4 py-3 text-center">
+                  <span class="px-2 py-0.5 rounded text-xs font-extrabold bg-emerald-950 text-accent-emerald border border-emerald-800/60">O (10.0)</span>
+                </td>
+                <td class="px-4 py-3 text-slate-400 italic">Outstanding logical implementation</td>
+              </tr>
+
+              <tr class="hover:bg-slate-900/40 transition-colors">
+                <td class="px-4 py-3 font-semibold text-white">
+                  <span class="text-primary-400 font-mono">CS502</span> • Database Management
+                </td>
+                <td class="px-4 py-3">CIE Test 1 (ER & Relational Algebra)</td>
+                <td class="px-4 py-3">
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-950 text-indigo-300 border border-indigo-800/40">INTERNAL_1</span>
+                </td>
+                <td class="px-4 py-3 text-right font-bold text-white font-mono">27.00 / 30.00</td>
+                <td class="px-4 py-3 text-center">
+                  <span class="px-2 py-0.5 rounded text-xs font-extrabold bg-indigo-950 text-primary-300 border border-indigo-800/60">A+ (9.0)</span>
+                </td>
+                <td class="px-4 py-3 text-slate-400 italic">Strong relational queries</td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Initialize Lucide Icons -->
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>
