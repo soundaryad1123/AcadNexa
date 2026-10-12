@@ -140,6 +140,7 @@ export interface Announcement {
   priority: "LOW" | "NORMAL" | "HIGH" | "URGENT";
   expires_at?: string | null;
   created_at: string;
+  published_at?: string | null;
 }
 
 export interface RosterStudent {

@@ -62,8 +62,8 @@ export default function StudentAlertsPage() {
         ) : (
           alerts.map((alert) => {
             const isUrgent = alert.priority === "URGENT" || alert.priority === "HIGH";
-            const dateStr = alert.published_at
-              ? new Date(alert.published_at).toLocaleDateString("en-US", {
+            const dateStr = alert.created_at
+              ? new Date(alert.created_at).toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
                   year: "numeric",
