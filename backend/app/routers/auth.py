@@ -1,10 +1,11 @@
 from datetime import datetime, timezone
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response
+from fastapi.security import HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.core.security import verify_password, create_access_token
-from app.core.dependencies import get_current_user
+from app.core.security import verify_password, create_access_token, revoke_token
+from app.core.dependencies import get_current_user, security_bearer
 from app.models.entities import User, College, Department, Student, Faculty, Admin
 from app.schemas.schemas import LoginRequest, TokenResponse, UserProfileResponse
 
@@ -132,3 +133,28 @@ def get_me(
             })
             
     return UserProfileResponse(**response_data)
+
+
+@router.post("/logout", summary="Completely destroy and invalidate active session")
+def logout(
+    response: Response,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security_bearer),
+):
+    """
+    Terminates user session server-side.
+    Revokes the JWT bearer token so that it cannot be reused even if intercepted.
+    Instructs client and intermediary proxies to discard auth cookies and cache.
+    """
+    if credentials and credentials.credentials:
+        revoke_token(credentials.credentials)
+    
+    # Instruct browser to purge auth cookies
+    response.delete_cookie(key="acadnexa_token", path="/")
+    response.delete_cookie(key="acadnexa_role", path="/")
+    
+    # Prevent caching of logout endpoint
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    
+    return {"message": "Session successfully destroyed and token revoked on server"}
+

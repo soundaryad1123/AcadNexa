@@ -1,7 +1,10 @@
+"use client";
+
 import React from "react";
 import { Card } from "@/components/ui/card";
 import { CheckCircle2, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { NumberTicker } from "@/components/animations/number-ticker";
 
 interface AttendanceRingProps {
   percentage: number;
@@ -84,7 +87,7 @@ export function AttendanceRing({
           </svg>
           <div className="absolute flex flex-col items-center justify-center text-center">
             <span className="text-2xl font-heading font-black text-white">
-              {percentage.toFixed(1)}%
+              <NumberTicker value={percentage} decimalPlaces={1} />%
             </span>
             <span className="text-[10px] text-slate-400 font-medium">Overall Rate</span>
           </div>

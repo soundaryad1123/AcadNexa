@@ -67,6 +67,26 @@ def test_auth_login_and_me():
     student_token = res.json()["access_token"]
     assert res.json()["role"] == "STUDENT"
 
+    # 5. Test Session Logout & Token Invalidation
+    temp_login = client.post("/api/v1/auth/login", json={
+        "email": "admin@aitm.edu.in",
+        "password": "Password@123"
+    })
+    if temp_login.status_code != 200:
+        temp_login = client.post("/api/v1/auth/login", json={
+            "email": "admin@aitm.edu.in",
+            "password": "Admin@2026"
+        })
+    temp_token = temp_login.json()["access_token"]
+    # Token valid
+    assert client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {temp_token}"}).status_code == 200
+    # Invalidate session
+    logout_res = client.post("/api/v1/auth/logout", headers={"Authorization": f"Bearer {temp_token}"})
+    assert logout_res.status_code == 200
+    # Revoked token must be rejected with 401
+    revoked_check = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {temp_token}"})
+    assert revoked_check.status_code == 401, "Revoked token was still accepted!"
+
     return admin_token, faculty_token, student_token
 
 
