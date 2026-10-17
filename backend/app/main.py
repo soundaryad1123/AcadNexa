@@ -120,7 +120,7 @@ def find_supabase():
         "ap-northeast-1",
     ]
     ports = [6543, 5432]
-    user = "postgres.ybyitltbkgephhtwnxw"
+    user = "postgres.ybyitltbfkgephhtwnxw"
     pw = "Soundarya@26"
 
     tested_logs = []

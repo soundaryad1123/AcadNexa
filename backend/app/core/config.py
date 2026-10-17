@@ -51,7 +51,7 @@ class Settings(BaseSettings):
                 env_url = f"postgresql+psycopg2://{self.POSTGRES_USER}:{encoded_password}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
             else:
                 encoded_pw = urllib.parse.quote_plus("Soundarya@26")
-                env_url = f"postgresql+psycopg2://postgres.ybyitltbkgephhtwnxw:{encoded_pw}@aws-0-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require"
+                env_url = f"postgresql+psycopg2://postgres.ybyitltbfkgephhtwnxw:{encoded_pw}@aws-0-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require"
 
         env_url = env_url.strip()
 
