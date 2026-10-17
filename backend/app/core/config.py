@@ -55,6 +55,14 @@ class Settings(BaseSettings):
 
         env_url = env_url.strip()
 
+        # Fix known typo in project ref if present
+        env_url = env_url.replace("ybyitltbkgephhtwnxw", "ybyitltbfkgephhtwnxw")
+
+        # Replace placeholder password if present
+        if "[YOUR-PASSWORD]" in env_url or "YOUR-PASSWORD" in env_url:
+            encoded_pw = urllib.parse.quote_plus("Soundarya@26")
+            env_url = env_url.replace("[YOUR-PASSWORD]", encoded_pw).replace("YOUR-PASSWORD", encoded_pw)
+
         # 1. Clean unescaped '@' characters in password
         if env_url.count("@") > 1:
             scheme, rest = env_url.split("://", 1)
@@ -69,18 +77,24 @@ class Settings(BaseSettings):
         match = re.search(r"db\.([a-z0-9]+)\.supabase\.co", env_url)
         if match:
             ref = match.group(1)
+            if ref == "ybyitltbkgephhtwnxw":
+                ref = "ybyitltbfkgephhtwnxw"
             pooler_host = "aws-0-ap-south-1.pooler.supabase.com:6543"
             env_url = re.sub(r"db\.[a-z0-9]+\.supabase\.co(?::\d+)?", pooler_host, env_url)
             if f"postgres.{ref}" not in env_url:
-                env_url = re.sub(r"://postgres:", f"://postgres.{ref}:", env_url)
+                env_url = re.sub(r"://postgres(?:\.[a-z0-9]+)?:", f"://postgres.{ref}:", env_url)
 
-        # 3. Ensure SSL mode is set for Supabase / Cloud Postgres
+        # 3. If pooler host is present, ensure correct tenant user
+        if "pooler.supabase.com" in env_url and "postgres.ybyitltbfkgephhtwnxw" not in env_url:
+            env_url = re.sub(r"://postgres(?:\.[a-z0-9]+)?:", "://postgres.ybyitltbfkgephhtwnxw:", env_url)
+
+        # 4. Ensure SSL mode is set for Supabase / Cloud Postgres
         if ".supabase.com" in env_url or ".pooler.supabase.com" in env_url:
             if "sslmode=" not in env_url:
                 sep = "&" if "?" in env_url else "?"
                 env_url = f"{env_url}{sep}sslmode=require"
 
-        # 4. Normalize dialect for SQLAlchemy
+        # 5. Normalize dialect for SQLAlchemy
         if env_url.startswith("postgres://"):
             return env_url.replace("postgres://", "postgresql+psycopg2://", 1)
         elif env_url.startswith("postgresql://") and not env_url.startswith("postgresql+psycopg2://"):
