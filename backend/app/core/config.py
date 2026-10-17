@@ -30,10 +30,25 @@ class Settings(BaseSettings):
         "http://localhost:8000",
         "http://127.0.0.1:3000",
         "http://127.0.0.1:8000",
+        "https://acad-nexa-frontend.vercel.app",
     ]
 
     @property
     def DATABASE_URL(self) -> str:
+        # Check explicit database URL environment variables (Render / Supabase / Neon / Railway)
+        env_url = (
+            os.getenv("DATABASE_URL")
+            or os.getenv("POSTGRES_URL")
+            or os.getenv("SUPABASE_DB_URL")
+        )
+        if env_url:
+            # Normalize PostgreSQL dialect for SQLAlchemy
+            if env_url.startswith("postgres://"):
+                return env_url.replace("postgres://", "postgresql+psycopg2://", 1)
+            elif env_url.startswith("postgresql://") and not env_url.startswith("postgresql+psycopg2://"):
+                return env_url.replace("postgresql://", "postgresql+psycopg2://", 1)
+            return env_url
+
         return f"postgresql+psycopg2://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
     model_config = SettingsConfigDict(

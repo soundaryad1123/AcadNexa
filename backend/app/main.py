@@ -16,8 +16,10 @@ app = FastAPI(
 )
 
 # Configure Cross-Origin Resource Sharing (CORS)
+# Supports localhost, any Vercel preview/production domain, and custom origins
 app.add_middleware(
     CORSMiddleware,
+    allow_origin_regex=r"^https?://.*",
     allow_origins=settings.BACKEND_CORS_ORIGINS if settings.BACKEND_CORS_ORIGINS else ["*"],
     allow_credentials=True,
     allow_methods=["*"],
@@ -50,6 +52,21 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     )
 
 
+@app.exception_handler(Exception)
+async def generic_exception_handler(request: Request, exc: Exception):
+    """
+    Catch-all exception handler to ensure CORS headers are preserved even on 500 errors.
+    """
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={
+            "success": False,
+            "error_code": "INTERNAL_SERVER_ERROR",
+            "message": str(exc),
+        },
+    )
+
+
 # Health Check & Root Endpoints
 @app.get("/health", tags=["System Health"])
 def health_check():
@@ -62,6 +79,26 @@ def health_check():
         "version": settings.PROJECT_VERSION,
         "environment": settings.ENVIRONMENT,
     }
+
+
+@app.get("/health/db", tags=["System Health"])
+def db_health_check():
+    """
+    Verifies live connectivity to PostgreSQL / Supabase.
+    """
+    from app.core.database import SessionLocal
+    from sqlalchemy import text
+    db = SessionLocal()
+    try:
+        db.execute(text("SELECT 1"))
+        return {"status": "healthy", "database": "connected"}
+    except Exception as e:
+        return JSONResponse(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            content={"status": "unhealthy", "database_error": str(e)},
+        )
+    finally:
+        db.close()
 
 
 @app.get("/", tags=["System Health"])
