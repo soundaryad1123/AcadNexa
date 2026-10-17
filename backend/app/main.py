@@ -114,6 +114,87 @@ def root_info():
     }
 
 
+# Auto-initialize database tables and populate initial root data on startup
+@app.on_event("startup")
+def startup_init():
+    try:
+        from app.models.entities import Base, User, College, Department
+        from app.core.database import engine, SessionLocal
+        from app.core.security import get_password_hash
+        import uuid
+        
+        # 1. Ensure tables exist in database (Supabase)
+        Base.metadata.create_all(bind=engine)
+        
+        # 2. Seed default users if empty
+        db = SessionLocal()
+        try:
+            if db.query(User).count() == 0:
+                print("Database empty. Auto-seeding initial colleges and demo users...")
+                c_aitm = College(
+                    id=uuid.UUID("773013e5-0ce8-4db7-b5af-af50bae06939"),
+                    name="Apex Institute of Technology & Management",
+                    code="AITM",
+                    slug="apex-tech",
+                    domain="aitm.edu.in",
+                    contact_email="contact@aitm.edu.in",
+                    status="active"
+                )
+                db.add(c_aitm)
+                db.flush()
+                
+                d_cse = Department(
+                    id=uuid.UUID("202c1550-5012-475f-a4ac-06fbcb139c93"),
+                    college_id=c_aitm.id,
+                    name="Computer Science & Engineering",
+                    code="CSE",
+                    head_of_department="Dr. Arvind Sharma"
+                )
+                db.add(d_cse)
+                db.flush()
+                
+                u_student = User(
+                    id=uuid.UUID("89baf284-a7f5-4727-8dc2-30a3c4ab4a86"),
+                    college_id=c_aitm.id,
+                    department_id=d_cse.id,
+                    email="aarav.sharma@aitm.edu.in",
+                    password_hash=get_password_hash("Student@123"),
+                    full_name="Aarav Sharma",
+                    role="STUDENT",
+                    status="active"
+                )
+                u_faculty = User(
+                    id=uuid.UUID("0ce413d1-8815-4239-8919-32ad41121836"),
+                    college_id=c_aitm.id,
+                    department_id=d_cse.id,
+                    email="priya.sharma@aitm.edu.in",
+                    password_hash=get_password_hash("Faculty@123"),
+                    full_name="Prof. Priya Sharma",
+                    role="FACULTY",
+                    status="active"
+                )
+                u_admin = User(
+                    id=uuid.UUID("11fa2ab2-d290-412f-a2aa-fccb7e2d6778"),
+                    college_id=c_aitm.id,
+                    department_id=d_cse.id,
+                    email="admin@aitm.edu.in",
+                    password_hash=get_password_hash("Admin@2026"),
+                    full_name="Prof. Vikramaditya Rao",
+                    role="ADMIN",
+                    status="active"
+                )
+                db.add_all([u_student, u_faculty, u_admin])
+                db.commit()
+                print("Auto-seeded demo users successfully!")
+        except Exception as seed_err:
+            db.rollback()
+            print(f"Seed info: {seed_err}")
+        finally:
+            db.close()
+    except Exception as e:
+        print(f"Startup DB init info: {e}")
+
+
 # Register Modular API Routers under /api/v1
 app.include_router(auth_router, prefix=settings.API_V1_STR)
 app.include_router(admin_router, prefix=settings.API_V1_STR)

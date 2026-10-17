@@ -61,6 +61,11 @@ class Settings(BaseSettings):
                 return env_url.replace("postgresql://", "postgresql+psycopg2://", 1)
             return env_url
 
+        # Cloud Production Default (Supabase Mumbai ap-south-1 Connection Pooler)
+        if os.getenv("RENDER") or (self.ENVIRONMENT == "production" and self.POSTGRES_HOST == "localhost"):
+            encoded_pw = urllib.parse.quote_plus("Soundarya@26")
+            return f"postgresql+psycopg2://postgres.ybyitltbkgephhtwnxw:{encoded_pw}@aws-0-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require"
+
         # URL-encode the password in case it contains special characters (@, #, $, %, etc.)
         encoded_password = urllib.parse.quote_plus(self.POSTGRES_PASSWORD)
         return f"postgresql+psycopg2://{self.POSTGRES_USER}:{encoded_password}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
