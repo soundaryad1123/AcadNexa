@@ -35,6 +35,8 @@ class Settings(BaseSettings):
 
     @property
     def DATABASE_URL(self) -> str:
+        import urllib.parse
+
         # Check explicit database URL environment variables (Render / Supabase / Neon / Railway)
         env_url = (
             os.getenv("DATABASE_URL")
@@ -42,6 +44,16 @@ class Settings(BaseSettings):
             or os.getenv("SUPABASE_DB_URL")
         )
         if env_url:
+            env_url = env_url.strip()
+            # If the password in the URI contains an unescaped '@' (resulting in multiple '@' in URL)
+            if env_url.count("@") > 1:
+                scheme, rest = env_url.split("://", 1)
+                auth_part, host_part = rest.rsplit("@", 1)
+                if ":" in auth_part:
+                    user, password = auth_part.split(":", 1)
+                    password_encoded = urllib.parse.quote_plus(urllib.parse.unquote_plus(password))
+                    env_url = f"{scheme}://{user}:{password_encoded}@{host_part}"
+
             # Normalize PostgreSQL dialect for SQLAlchemy
             if env_url.startswith("postgres://"):
                 return env_url.replace("postgres://", "postgresql+psycopg2://", 1)
@@ -49,7 +61,9 @@ class Settings(BaseSettings):
                 return env_url.replace("postgresql://", "postgresql+psycopg2://", 1)
             return env_url
 
-        return f"postgresql+psycopg2://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        # URL-encode the password in case it contains special characters (@, #, $, %, etc.)
+        encoded_password = urllib.parse.quote_plus(self.POSTGRES_PASSWORD)
+        return f"postgresql+psycopg2://{self.POSTGRES_USER}:{encoded_password}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
     model_config = SettingsConfigDict(
         env_file=".env",
