@@ -101,6 +101,61 @@ def db_health_check():
         db.close()
 
 
+@app.get("/health/find-supabase", tags=["System Health"])
+def find_supabase():
+    """
+    Automated probe to test Supabase pooler clusters and regions.
+    """
+    import psycopg2
+    import urllib.parse
+
+    clusters = ["aws-0", "aws-1"]
+    regions = [
+        "ap-south-1",
+        "ap-southeast-1",
+        "us-east-1",
+        "eu-central-1",
+        "us-west-1",
+        "eu-west-1",
+        "ap-northeast-1",
+    ]
+    ports = [6543, 5432]
+    user = "postgres.ybyitltbkgephhtwnxw"
+    pw = "Soundarya@26"
+
+    tested_logs = []
+    for c in clusters:
+        for r in regions:
+            for p in ports:
+                host = f"{c}-{r}.pooler.supabase.com"
+                try:
+                    conn = psycopg2.connect(
+                        host=host,
+                        port=p,
+                        user=user,
+                        password=pw,
+                        dbname="postgres",
+                        connect_timeout=3,
+                        sslmode="require",
+                    )
+                    conn.close()
+                    winning_url = f"postgresql+psycopg2://{user}:{urllib.parse.quote_plus(pw)}@{host}:{p}/postgres?sslmode=require"
+                    return {
+                        "status": "connected",
+                        "host": host,
+                        "port": p,
+                        "winning_url": winning_url,
+                    }
+                except Exception as e:
+                    tested_logs.append(f"{host}:{p} -> {str(e).strip()[:70]}")
+
+    return {
+        "status": "failed",
+        "tested_count": len(tested_logs),
+        "sample_errors": tested_logs[:8],
+    }
+
+
 @app.get("/", tags=["System Health"])
 def root_info():
     """
