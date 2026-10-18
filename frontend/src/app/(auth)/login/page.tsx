@@ -10,8 +10,8 @@ import { Card } from "@/components/ui/card";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("aarav.sharma@aitm.edu.in");
-  const [password, setPassword] = useState("Student@123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [collegeSlug, setCollegeSlug] = useState("apex-tech");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,19 +36,6 @@ export default function LoginPage() {
       setError(err?.message || "Invalid credentials. Please verify your email and password.");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const setDemoCredentials = (role: "ADMIN" | "FACULTY" | "STUDENT") => {
-    if (role === "ADMIN") {
-      setEmail("admin@aitm.edu.in");
-      setPassword("Admin@2026");
-    } else if (role === "FACULTY") {
-      setEmail("priya.sharma@aitm.edu.in");
-      setPassword("Faculty@123");
-    } else if (role === "STUDENT") {
-      setEmail("aarav.sharma@aitm.edu.in");
-      setPassword("Student@123");
     }
   };
 
@@ -123,6 +110,7 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••••••"
               />
             </div>
 
@@ -135,36 +123,6 @@ export default function LoginPage() {
               {!loading && <ArrowRight className="w-4 h-4 ml-2" />}
             </Button>
           </form>
-
-          {/* Quick Demo Logins Pill Strip */}
-          <div className="mt-6 pt-5 border-t border-border">
-            <p className="text-[11px] font-semibold text-slate-400 text-center uppercase tracking-wider mb-2.5">
-              1-Click Demo Credentials
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => setDemoCredentials("ADMIN")}
-                className="py-1.5 px-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-border text-[11px] font-medium text-slate-300 text-center transition-colors"
-              >
-                Admin
-              </button>
-              <button
-                type="button"
-                onClick={() => setDemoCredentials("FACULTY")}
-                className="py-1.5 px-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-border text-[11px] font-medium text-slate-300 text-center transition-colors"
-              >
-                Faculty
-              </button>
-              <button
-                type="button"
-                onClick={() => setDemoCredentials("STUDENT")}
-                className="py-1.5 px-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-border text-[11px] font-medium text-slate-300 text-center transition-colors"
-              >
-                Student
-              </button>
-            </div>
-          </div>
         </Card>
       </div>
     </div>
