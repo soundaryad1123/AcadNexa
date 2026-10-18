@@ -16,13 +16,14 @@ app = FastAPI(
 )
 
 # Configure Cross-Origin Resource Sharing (CORS)
-# Supports localhost, any Vercel preview/production domain, and custom origins
+# Explicitly allows the live Vercel production frontend domain
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"^https?://.*",
-    allow_origins=settings.BACKEND_CORS_ORIGINS if settings.BACKEND_CORS_ORIGINS else ["*"],
+    allow_origins=[
+        "https://acad-nexa-frontend.vercel.app",
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
